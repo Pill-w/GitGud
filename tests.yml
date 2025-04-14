@@ -1,0 +1,51 @@
+# .github/workflows/develop-branch-tests.yml
+name: Component Tests
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  cypress-component-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Cypress component tests
+        run: npm run cy:component
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-component-results
+          path: cypress/results
+          retention-days: 5
+
+# .github/workflows/deploy-to-render.yml
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  trigger-render-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
